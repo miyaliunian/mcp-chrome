@@ -1,17 +1,3 @@
-# Chrome MCP Server 🚀
-
-[![许可证: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue.svg)](https://www.typescriptlang.org/)
-[![Chrome 扩展](https://img.shields.io/badge/Chrome-Extension-green.svg)](https://developer.chrome.com/docs/extensions/)
-
-> 🌟 **让chrome浏览器变成你的智能助手** - 让AI接管你的浏览器，将您的浏览器转变为强大的 AI 控制自动化工具。
-
-**📖 文档**: [English](README.md) | [中文](README_zh.md)
-
-> 项目仍处于早期阶段，正在紧锣密鼓开发中，后续将有更多新功能，以及稳定性等的提升，如遇bug，请轻喷
-
----
-
 ## 🎯 什么是 Chrome MCP Server？
 
 Chrome MCP Server 是一个基于chrome插件的 **模型上下文协议 (MCP) 服务器**，它将您的 Chrome 浏览器功能暴露给 Claude 等 AI 助手，实现复杂的浏览器自动化、内容分析和语义搜索等。与传统的浏览器自动化工具（如playwright）不同，**Chrome MCP server**直接使用您日常使用的chrome浏览器，基于现有的用户习惯和配置、登录态，让各种大模型或者各种chatbot都可以接管你的浏览器，真正成为你的如常助手
@@ -28,16 +14,7 @@ Chrome MCP Server 是一个基于chrome插件的 **模型上下文协议 (MCP) �
 - 🌐 **20+ 工具**：支持截图、网络监控、交互操作、书签管理、浏览历史等20多种工具
 - 🚀 **SIMD 加速 AI**：自定义 WebAssembly SIMD 优化，向量运算速度提升 4-8 倍
 
-## 🆚 与同类项目对比
-
-| 对比维度           | 基于Playwright的MCP Server                                          | 基于Chrome插件的MCP Server                                    |
-| ------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------- |
-| **资源占用**       | ❌ 需启动独立浏览器进程，需要安装Playwright依赖，下载浏览器二进制等 | ✅ 无需启动独立的浏览器进程，直接利用用户已打开的Chrome浏览器 |
-| **用户会话复用**   | ❌ 需重新登录                                                       | ✅ 自动使用已登录状态                                         |
-| **浏览器环境保持** | ❌ 干净环境缺少用户设置                                             | ✅ 完整保留用户环境                                           |
-| **API访问权限**    | ⚠️ 受限于Playwright API                                             | ✅ Chrome原生API全访问                                        |
-| **启动速度**       | ❌ 需启动浏览器进程                                                 | ✅ 只需激活插件                                               |
-| **响应速度**       | 50-200ms进程间通信                                                  | ✅ 更快                                                       |
+                                                |
 
 ## 🚀 快速开始
 
@@ -79,8 +56,7 @@ mcp-chrome-bridge register
    - 启用"开发者模式"
    - 点击"加载已解压的扩展程序"，选择 `your/dowloaded/extension/folder`
    - 点击插件图标打开插件，点击连接即可看到mcp的配置
-     
-   <img width="475" alt="截屏2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
+     <img width="475" alt="截屏2025-06-09 15 52 06" src="https://github.com/user-attachments/assets/241e57b8-c55f-41a4-9188-0367293dc5bc" />
 
 ### 在支持MCP协议的客户端中使用
 
@@ -192,123 +168,61 @@ pnpm list -g mcp-chrome-bridge
 - `chrome_bookmark_delete` - 删除书签
 </details>
 
-## 🧪 使用示例
+### 项目流程时序图
 
-### ai帮你总结网页内容然后自动控制excalidraw画图
+```mermaid
+sequenceDiagram
+         actor User
+         participant PopupUI as Popup UI (Vue)
+         participant Background as Background Script
+         participant Content as Content Script
+         participant NativeHost as Native Host (Node.js)
+         participant WebPage as Target Web Page
 
-prompt: [excalidraw-prompt](prompt/excalidraw-prompt.md)
-指令：帮我总结当前页面内容，然后画个图帮我理解
-https://www.youtube.com/watch?v=3fBPdUBWVz0
+         User->>PopupUI: 输入指令 (例如: "点击登录按钮")
+        PopupUI->>Background: chrome.runtime.sendMessage(command)
 
+        Note over Background: 收到指令, 开始分析和分发任务
 
-https://github.com/user-attachments/assets/f14f79a6-9390-4821-8296-06d020bcfc07
+        alt 指令需要理解页面内容
+            Background->>Content: chrome.tabs.sendMessage("获取页面元素")
+            Content->>WebPage: 分析DOM, 查找元素
+            WebPage-->>Content: 返回元素信息
+            Content-->>Background: 返回分析结果 (例如: 登录按钮的位置)
+        end
 
-### ai先分析图片的内容元素，然后再自动控制excalidraw把图片模仿出来
+        alt 指令需要本地能力 (例如: 复杂的AI分析)
+            Background->>NativeHost: 通过 Native Messaging 发送请求
+            NativeHost-->>Background: 返回处理结果
+        end
 
-prompt: [excalidraw-prompt](prompt/excalidraw-prompt.md)|[content-analize](prompt/content-analize.md)
-指令：先看下图片是否能用excalidraw画出来，如果则列出所需的步骤和元素，然后画出来
-https://www.youtube.com/watch?v=tEPdHZBzbZk
+        Note over Background: 决定执行点击操作
+        Background->>Content: chrome.tabs.sendMessage("执行点击", {element})
+        Content->>WebPage: 通过注入脚本或直接操作DOM, 模拟点击
+        WebPage-->>User: 页面发生变化 (例如: 跳转到登录后页面)
 
-https://github.com/user-attachments/assets/4f0600c1-bb1e-4b57-85ab-36c8bdf71c68
+        Content-->>Background: (可选) 返回操作执行状态
+        Background-->>PopupUI: (可选) 更新UI状态 (例如: 显示"任务完成")
+        PopupUI-->>User: 展示最终结果
+```
 
-### ai自动帮你注入脚本并修改网页的样式
+### 核心：`native-server` 的双重角色
 
-prompt: [modify-web-prompt](prompt/modify-web.md)
-指令：帮我修改当前页面的样式，去掉广告
-https://youtu.be/twI6apRKHsk
+```mermaid
+sequenceDiagram
+         participant Client as MCP 客户端
+         participant NativeServer as Native Server (stdio 模式)
+         participant Background as Background Script
+         participant Content as Content Script
+         participant WebPage as 目标网页
 
-
-https://github.com/user-attachments/assets/aedbe98d-e90c-4a58-a4a5-d888f7293d8e
-
-### ai自动帮你捕获网络请求
-
-指令：我想知道小红书的搜索接口是哪个，响应体结构是什么样的
-https://youtu.be/1hHKr7XKqnQ
-
-
-https://github.com/user-attachments/assets/063f44ae-1754-46b6-b141-5988c86e4d96
-
-### ai帮你分析你的浏览记录
-
-指令：分析一下我近一个月的浏览记录
-https://youtu.be/jf2UZfrR2Vk
-
-
-https://github.com/user-attachments/assets/e7a35118-e50e-4b1c-a790-0878aa2505ab
-
-### 网页对话
-
-指令：翻译并总结当前网页
-https://youtu.be/FlJKS9UQyC8
-
-
-https://github.com/user-attachments/assets/08aa86aa-7706-4df2-b400-576e2c7fcc7f
-
-### ai帮你自动截图（网页截图）
-
-指令：把huggingface的首页截个图
-https://youtu.be/7ycK6iksWi4
-
-https://github.com/user-attachments/assets/b081e41b-6309-40d6-885b-0da01691b12e
-
-### ai帮你自动截图（元素截图）
-
-指令：把huggingface首页的图标截取下来
-https://youtu.be/ev8VivANIrk
-
-https://github.com/user-attachments/assets/25657076-b84b-4459-a72f-90f896f06364
-
-### ai帮你管理书签
-
-指令：将当前页面添加到书签中，放到合适的文件夹
-https://youtu.be/R_83arKmFTo
-
-
-https://github.com/user-attachments/assets/73c1ea26-65fb-4b5e-b537-e32fa9bcfa52
-
-### 自动关闭网页
-
-指令：关闭所有shadcn相关的网页
-https://youtu.be/2wzUT6eNVg4
-
-
-https://github.com/user-attachments/assets/ff160f48-58e0-4c76-a6b0-c4e1f91370c8
-
-## 🤝 贡献指南
-
-我们欢迎贡献！请查看 [CONTRIBUTING_zh.md](docs/CONTRIBUTING_zh.md) 了解详细指南。
-
-## 🚧 未来发展路线图
-
-我们对 Chrome MCP Server 的未来发展有着激动人心的计划：
-
-- [ ] 身份认证
-
-- [ ] 录制与回放
-
-- [ ] 工作流自动化
-
-- [ ] 增强浏览器支持（Firefox 扩展）
-
----
-
-**想要为这些功能中的任何一个做贡献？** 查看我们的[贡献指南](docs/CONTRIBUTING_zh.md)并加入我们的开发社区！
-
-## 📄 许可证
-
-本项目采用 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
-
-## 📚 更多文档
-
-- [架构设计](docs/ARCHITECTURE_zh.md) - 详细的技术架构说明
-- [工具列表](docs/TOOLS_zh.md) - 完整的工具 API 文档
-- [故障排除](docs/TROUBLESHOOTING_zh.md) - 常见问题解决方案
-
-## 微信交流群
-
-拉群的目的是让踩过坑的大佬们互相帮忙解答问题，因本人平时要忙着搬砖，不一定能及时解答
-
-![IMG_6296](https://github.com/user-attachments/assets/ecd2e084-24d2-4038-b75f-3ab020b55594)
-
-
-
+         Client->>+NativeServer: 通过 stdin 发送 JSON 指令 (如: fill_element)
+         Note over NativeServer: 收到指令, 查询 `register-tools.ts`
+        NativeServer->>+Background: 通过 Native Messaging 发送内部指令
+        Background->>+Content: chrome.tabs.sendMessage("执行填充操作")
+        Content->>+WebPage: 找到元素并填充文本
+        WebPage-->>-Content: (操作完成)
+        Content-->>-Background: 返回执行结果 (成功/失败)
+        Background-->>-NativeServer: 返回结果
+        NativeServer->>-Client: 通过 stdout 返回 JSON 响应
+```
