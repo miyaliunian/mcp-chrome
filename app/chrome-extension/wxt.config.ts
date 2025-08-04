@@ -1,7 +1,16 @@
+/*
+ * @Author: 逗逗飞 wufei@strongdata.com.cn
+ * @Date: 2025-08-04 10:57:19
+ * @LastEditors: 逗逗飞 wufei@strongdata.com.cn
+ * @LastEditTime: 2025-08-04 13:17:58
+ * @FilePath: /mcp-chrome/app/chrome-extension/wxt.config.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { defineConfig } from 'wxt';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import { homedir } from 'os';
 
 config({ path: resolve(process.cwd(), '.env') });
 config({ path: resolve(process.cwd(), '.env.local') });
@@ -11,17 +20,19 @@ const CHROME_EXTENSION_KEY = process.env.CHROME_EXTENSION_KEY;
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
+  debug: true,
   runner: {
     // 方案1: 禁用自动启动（推荐）
     disabled: true,
-
     // 方案2: 如果要启用自动启动并使用现有配置，取消注释下面的配置
     // chromiumArgs: [
-    //   '--user-data-dir=' + homedir() + (process.platform === 'darwin'
-    //     ? '/Library/Application Support/Google/Chrome'
-    //     : process.platform === 'win32'
-    //     ? '/AppData/Local/Google/Chrome/User Data'
-    //     : '/.config/google-chrome'),
+    //   '--user-data-dir=' +
+    //     homedir() +
+    //     (process.platform === 'darwin'
+    //       ? '/Library/Application Support/Google/Chrome'
+    //       : process.platform === 'win32'
+    //         ? '/AppData/Local/Google/Chrome/User Data'
+    //         : '/.config/google-chrome'),
     //   '--remote-debugging-port=9222',
     // ],
   },
