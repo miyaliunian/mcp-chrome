@@ -33,7 +33,7 @@ NODE_SCRIPT="${SCRIPT_DIR}/index.js"
 } > "${WRAPPER_LOG}"
 
 # Node.js discovery
-NODE_EXEC=""
+NODE_EXEC="/Users/doudoufei/.volta/tools/image/node/22.17.1/bin/node"
 
 # Priority 1: Installation-time node path
 NODE_PATH_FILE="${SCRIPT_DIR}/node_path.txt"
