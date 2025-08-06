@@ -27,6 +27,10 @@ export default tseslint.config(
       'app/**/workers/**',
       'packages/**/workers/**',
       'test-inject-script.js',
+      // Ignore inject-scripts and generated files with ESLint issues
+      'app/chrome-extension/inject-scripts/**',
+      'app/chrome-extension/utils/dom-helpers.generated.ts',
+      'mvp/native-host/**',
     ],
   },
 

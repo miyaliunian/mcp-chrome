@@ -1,35 +1,38 @@
-# 构建输出目录
-dist
-.output
-.wxt
+# Dependencies
+node_modules/
 
-# 依赖
-node_modules
+# Build outputs
+dist/
+.output/
+.wxt/
 
-# 日志
-logs
+# Generated files
+app/chrome-extension/utils/dom-helpers.generated.ts
+app/chrome-extension/inject-scripts/**
+mvp/native-host/**
+
+# Workers
+**/workers/**
+
+# Logs
+logs/
 *.log
 
-# 缓存
-.cache
-.temp
+# Cache
+.cache/
+.temp/
 
-# 编辑器配置
-.vscode
-!.vscode/extensions.json
-.idea
-
-# 系统文件
+# System files
 .DS_Store
 Thumbs.db
 
-# 打包文件
+# Package files
 *.zip
 *.tar.gz
 
-# 统计文件
+# Stats
 stats.html
 stats-*.json
 
-# 锁文件
+# Lock files
 pnpm-lock.yaml

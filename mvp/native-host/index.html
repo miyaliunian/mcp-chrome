@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Native Host MVP 调试器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .connect-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .disconnect-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .status-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .input-group {
+            margin: 10px 0;
+        }
+
+        input[type="number"] {
+            padding: 5px;
+            width: 100px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 Native Host MVP 调试器</h1>
+
+    <div class="container">
+        <h2>连接状态</h2>
+        <div id="connectionStatus" class="status disconnected">未连接</div>
+        <div id="serverStatus" class="status">服务器状态: 未知</div>
+    </div>
+
+    <div class="container">
+        <h2>控制面板</h2>
+        <div class="input-group">
+            <label>端口: <input type="number" id="portInput" value="3000" min="1000" max="9999"></label>
+        </div>
+        <div class="controls">
+            <button class="connect-btn" onclick="connect()">连接原生主机</button>
+            <button class="disconnect-btn" onclick="disconnect()">断开连接</button>
+            <button class="status-btn" onclick="getStatus()">获取状态</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>工具调用测试</h2>
+        <div class="controls">
+            <button onclick="testToolCall('list_files')">测试 list_files</button>
+            <button onclick="testToolCall('read_file')">测试 read_file</button>
+            <button onclick="testToolCall('write_file')">测试 write_file</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>调试日志</h2>
+        <div id="log" class="log">等待操作...</div>
+        <div class="controls">
+            <button onclick="clearLog()">清空日志</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 导入 MVP 实现
+        import './simple-native-host.js';
+
+        let logElement = document.getElementById('log');
+        let connectionStatusElement = document.getElementById('connectionStatus');
+        let serverStatusElement = document.getElementById('serverStatus');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.textContent = '';
+        }
+
+        function updateStatus(connected, serverStatus) {
+            if (connected) {
+                connectionStatusElement.textContent = '已连接到原生主机';
+                connectionStatusElement.className = 'status connected';
+            } else {
+                connectionStatusElement.textContent = '未连接';
+                connectionStatusElement.className = 'status disconnected';
+            }
+
+            if (serverStatus) {
+                serverStatusElement.textContent = `服务器状态: ${serverStatus.isRunning ? '运行中' : '已停止'}${serverStatus.port ? ` (端口: ${serverStatus.port})` : ''}`;
+            }
+        }
+
+        window.connect = function () {
+            const port = parseInt(document.getElementById('portInput').value);
+            log(`→ 尝试连接到原生主机，端口: ${port}`);
+
+            window.postMessage({
+                type: 'CONNECT_NATIVE',
+                payload: { port }
+            }, '*');
+        };
+
+        window.disconnect = function () {
+            log('→ 断开连接');
+            window.postMessage({
+                type: 'DISCONNECT_NATIVE'
+            }, '*');
+        };
+
+        window.getStatus = function () {
+            log('→ 获取状态');
+            window.postMessage({
+                type: 'GET_STATUS'
+            }, '*');
+        };
+
+        window.testToolCall = function (toolName) {
+            log(`→ 测试工具调用: ${toolName}`);
+
+            // if (!nativePort) {
+            //     log(`   ❌ 未连接到原生主机，请先连接`);
+            //     return;
+            // }
+
+            // 送工具调用消息到 simple-native-host
+            const toolCallMessage = {
+                type: 'CALL_TOOL',
+                requestId: 'test_' + Date.now(),
+                payload: {
+                    toolName: toolName,
+                    parameters: {
+                        path: '/test/path',
+                        content: '测试内容'
+                    }
+                }
+            };
+
+            window.postMessage(toolCallMessage, '*');
+            log(`   ✅ 工具调用消息已发送: ${JSON.stringify(toolCallMessage)}`);
+        };
+
+        // 监听来自 MVP 的消息
+        window.addEventListener('message', (event) => {
+            const { type, payload, responseToRequestId } = event.data;
+
+            switch (type) {
+                case 'STATUS_RESPONSE':
+                    updateStatus(payload.connected, payload.serverStatus);
+                    log(`← 状态响应: 连接=${payload.connected}, 服务器=${JSON.stringify(payload.serverStatus)}`);
+                    break;
+                    
+                case 'SERVER_STARTED':
+                    log(`← 服务器已启动: 端口 ${payload.port}`);
+                    break;
+                    
+                case 'SERVER_STOPPED':
+                    log(`← 服务器已停止`);
+                    break;
+
+                default:
+                    if (responseToRequestId && responseToRequestId.startsWith('test_')) {
+                        log(`← 工具响应: ${JSON.stringify(payload)}`);
+                    } else {
+                        log(`← 收到消息: ${type} ${payload ? JSON.stringify(payload) : ''}`);
+                    }
+            }
+        });
+
+        // 定期获取状态
+        setInterval(() => {
+            window.postMessage({ type: 'GET_STATUS' }, '*');
+        }, 2000);
+
+        log('MVP 调试器已就绪');
+    </script>
+</body>
+
+</html>

@@ -44,8 +44,8 @@
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,vue}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint --fix --no-warn-ignored",
+      "prettier --write --ignore-unknown"
     ],
     "**/*.{json,md,yaml,html,css}": [
       "prettier --write"
